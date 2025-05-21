@@ -161,6 +161,7 @@ loadPopularMovies();
 // ---------------------------------------FAVORIS---------------
 
 // 🟢 Afficher les films favoris
+
 function loadFavorites() {
     const favoritesContainer = document.getElementById("favoritesContainer");
     const favorites = JSON.parse(localStorage.getItem("favorites")) || [];
@@ -180,7 +181,7 @@ function loadFavorites() {
                     <div class="card-body">
                         <h5 class="card-title">${movie.title}</h5>
                         <button class="btn btn-danger" onclick="removeFromFavorites(${movie.id})">Supprimer</button>
-                        <button class="btn btn-info" onclick="redirectToPlatform(${movie.id})">Où regarder ?</button>
+                        <a href="platformes.html?movieId=${movie.id}" class="btn btn-info">Où regarder ?</a>
                     </div>
                 </div>
             </div>
@@ -194,10 +195,9 @@ function removeFromFavorites(id) {
     let favorites = JSON.parse(localStorage.getItem("favorites")) || [];
     favorites = favorites.filter(movie => movie.id !== id);
     localStorage.setItem("favorites", JSON.stringify(favorites));
-    loadFavorites(); // Recharger la liste après suppression
+    loadFavorites(); // 🔄 Recharger la liste après suppression
 }
 
-// 🟢 Vérifier si on est sur la page favoris et charger les favoris
-if (window.location.pathname.includes("favoris.html")) {
-    loadFavorites();
-}
+// 🟢 Charger les favoris au démarrage
+document.addEventListener("DOMContentLoaded", loadFavorites);
+

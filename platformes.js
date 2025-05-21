@@ -4,6 +4,13 @@ const API_KEY = "aac46808dee81ba0b36f3177518f3a48";
 const urlParams = new URLSearchParams(window.location.search);
 const movieId = urlParams.get("movieId");
 
+if (!movieId) {
+    document.getElementById("platformContainer").innerHTML = "<p class='text-center'>Aucun film sélectionné.</p>";
+} else {
+    loadMovieDetails();
+    loadPlatformProviders();
+}
+
 // 🟢 Liste des plateformes avec leurs liens et logos
 const streamingLinks = {
     "Netflix": { url: "https://www.netflix.com/search?q=", logo: "img/netflix.png" },
@@ -88,6 +95,85 @@ function loadPlatformProviders() {
         .catch(error => console.error("Erreur API :", error));
 }
 
-// Charger les détails du film et les plateformes au démarrage
+// 🟢 Charger les acteurs du film depuis l'API TMDB
+function loadActors() {
+    const actorsList = document.getElementById("actorsList");
+
+    if (!movieId) {
+        actorsList.innerHTML = "<p class='text-center'>Aucun film sélectionné.</p>";
+        return;
+    }
+
+    const url = `https://api.themoviedb.org/3/movie/${movieId}/credits?api_key=${API_KEY}&language=fr-FR`;
+
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            const actors = data.cast.slice(0, 10); // 🟢 Limite à 10 acteurs pour le carrousel
+            actorsList.innerHTML = "";
+
+            let actorsHTML = '<div class="carousel-item active"><div class="d-flex justify-content-center gap-3">';
+
+            actors.forEach((actor, index) => {
+                actorsHTML += `
+                    <a href="acteur.html?actorId=${actor.id}" class="text-decoration-none">
+                        <div class="card bg-dark text-white border-light shadow-lg" style="width: 150px;">
+                            <img src="https://image.tmdb.org/t/p/w300${actor.profile_path}" class="card-img-top" alt="${actor.name}">
+                            <div class="card-body text-center">
+                                <h6 class="fw-bold">${actor.name}</h6>
+                                <p class="text-info">${actor.character}</p>
+                            </div>
+                        </div>
+                    </a>
+                `;
+
+                if ((index + 1) % 5 === 0 && index !== actors.length - 1) {
+                    actorsHTML += '</div></div><div class="carousel-item"><div class="d-flex justify-content-center gap-3">';
+                }
+            });
+
+            actorsHTML += '</div></div>';
+            actorsList.innerHTML = actorsHTML;
+        })
+        .catch(error => console.error("Erreur API Acteurs :", error));
+}
+
+// 🟢 Ajouter un film aux favoris
+document.addEventListener("DOMContentLoaded", function () {
+    const favoriteButton = document.getElementById("favoriteButton");
+    const movieId = new URLSearchParams(window.location.search).get("movieId");
+    let favorites = JSON.parse(localStorage.getItem("favorites")) || [];
+
+    // 🟢 Vérifier si le film est déjà en favoris
+    if (favorites.some(movie => movie.id == movieId)) {
+        favoriteButton.innerText = "✅ En Favoris";
+        favoriteButton.disabled = true;
+    }
+
+    // 🟢 Ajouter aux favoris lors du clic
+    favoriteButton.addEventListener("click", function () {
+        fetch(`https://api.themoviedb.org/3/movie/${movieId}?api_key=${API_KEY}&language=fr-FR`)
+            .then(response => response.json())
+            .then(movie => {
+                if (!favorites.some(fav => fav.id == movie.id)) {
+                    favorites.push({
+                        id: movie.id,
+                        title: movie.title,
+                        poster: movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : "img/placeholder.png"
+                    });
+                    localStorage.setItem("favorites", JSON.stringify(favorites));
+                    favoriteButton.innerText = "✅ En Favoris";
+                    favoriteButton.disabled = true;
+                }
+            })
+            .catch(error => console.error("Erreur lors de l'ajout aux favoris :", error));
+    });
+});
+
+
+
+
+// 🟢 Charger les données au démarrage
 loadMovieDetails();
 loadPlatformProviders();
+loadActors();
